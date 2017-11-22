@@ -115,6 +115,7 @@ export default class AppIntro extends Component {
       doneFadeOpacity: new Animated.Value(0),
       nextOpacity: new Animated.Value(1),
       parallax: new Animated.Value(0),
+      androidPage: new Animated.Value(0),
     };
   }
 
@@ -159,16 +160,29 @@ export default class AppIntro extends Component {
   }
   getTransform = (index, offset, level) => {
     const isFirstPage = index === 0;
-    const statRange = isFirstPage ? 0 : windowsWidth * (index - 1);
-    const endRange = isFirstPage ? windowsWidth : windowsWidth * index;
     const startOpacity = isFirstPage ? 1 : 0;
     const endOpacity = isFirstPage ? 1 : 1;
+    
     const leftPosition = isFirstPage ? 0 : windowsWidth / 3;
     const rightPosition = isFirstPage ? -windowsWidth / 3 : 0;
+
+    const statRange = isFirstPage ? 0 : windowsWidth * (index - 1);
+    const endRange = isFirstPage ? windowsWidth : windowsWidth * index;
+
+    let animValue;
+    if (Platform.OS === 'ios') {
+      animValue = this.state.parallax;
+    } else {
+      const widthAnim = new Animated.Value(windowsWidth);
+      const pageAnim = Animated.multiply(this.state.androidPage, widthAnim);      
+      const offsetAnim = Animated.multiply(this.state.parallax, widthAnim);
+      animValue = Animated.add(pageAnim, offsetAnim);   
+    }
+
     const transform = [{
       transform: [
         {
-          translateX: this.state.parallax.interpolate({
+          translateX: animValue.interpolate({
             inputRange: [statRange, endRange],
             outputRange: [
               isFirstPage ? leftPosition : leftPosition - (offset * level),
@@ -177,7 +191,7 @@ export default class AppIntro extends Component {
           }),
         }],
     }, {
-      opacity: this.state.parallax.interpolate({
+      opacity: animValue.interpolate({
         inputRange: [statRange, endRange], outputRange: [startOpacity, endOpacity],
       }),
     }];
@@ -305,31 +319,10 @@ export default class AppIntro extends Component {
     const childrens = this.props.children;
     const { pageArray } = this.props;
     let pages = [];
-    let androidPages = null;
     if (pageArray.length > 0) {
       pages = pageArray.map((page, i) => this.renderBasicSlidePage(i, page));
     } else {
-      if (Platform.OS === 'ios') {
-        pages = childrens.map((children, i) => this.renderChild(children, i, i));
-      } else {
-        androidPages = childrens.map((children, i) => {
-          const { transform } = this.getTransform(i, -windowsWidth / 3 * 2, 1);
-          pages.push(<View key={i} />);
-          return (
-            <Animated.View key={i} style={[{
-              position: 'absolute',
-              height: windowsHeight,
-              width: windowsWidth,
-              top: 0,
-            }, {
-              ...transform[0],
-            }]}
-            >
-              {this.renderChild(children, i, i)}
-            </Animated.View>
-          );
-        });
-      }
+      pages = childrens.map((children, i) => this.renderChild(children, i, i));
     }
 
     if (this.isToTintStatusBar()) {
@@ -342,7 +335,6 @@ export default class AppIntro extends Component {
 
     return (
       <View style={this.props.style}>
-        {androidPages}
         <Swiper
           loop={false}
           index={this.props.defaultIndex}
@@ -351,11 +343,11 @@ export default class AppIntro extends Component {
           renderPagination={this.renderPagination}
           onMomentumScrollEnd={(e, state) => {
             if (this.isToTintStatusBar()) {
-             const statusBarColor = this.props.pageArray[state.index].statusBarColor || this.props.pageArray[state.index].backgroundColor || undefined;
+              const statusBarColor = this.props.pageArray[state.index].statusBarColor || this.props.pageArray[state.index].backgroundColor || undefined;
 
-             if (statusBarColor) {
+              if (statusBarColor) {
                 StatusBar.setBackgroundColor(this.shadeStatusBarColor(statusBarColor, -0.3), false);
-             }
+              }
             }
 
             this.props.onSlideChange(state.index, state.total);
@@ -364,8 +356,15 @@ export default class AppIntro extends Component {
           onScroll={Animated.event(
             [{ nativeEvent: {
                 contentOffset: {
-                  x: this.state.parallax
+                  x: this.state.parallax,
                 }
+              }
+            }]
+          )}
+          onPageScroll={Animated.event(
+            [{ nativeEvent: {
+                position: this.state.androidPage,
+                offset: this.state.parallax,
               }
             }]
           )}
