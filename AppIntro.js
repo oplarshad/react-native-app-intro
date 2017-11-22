@@ -360,6 +360,7 @@ export default class AppIntro extends Component {
 
             this.props.onSlideChange(state.index, state.total);
           }}
+          scrollEventThrottle={16}
           onScroll={Animated.event(
             [{ nativeEvent: {
                 contentOffset: {
