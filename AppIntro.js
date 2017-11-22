@@ -341,7 +341,7 @@ export default class AppIntro extends Component {
     }
 
     return (
-      <View style={this.props.style}>>
+      <View style={this.props.style}>
         {androidPages}
         <Swiper
           loop={false}
