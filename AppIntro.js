@@ -1,12 +1,11 @@
 import assign from 'assign-deep';
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 import {
   StatusBar,
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   Animated,
   Dimensions,
   Image,
@@ -20,7 +19,7 @@ import RenderDots from './components/Dots';
 const windowsWidth = Dimensions.get('window').width;
 const windowsHeight = Dimensions.get('window').height;
 
-const defaulStyles = {
+const defaultStyles = {
   header: {
     flex: 0.5,
     justifyContent: 'center',
@@ -109,7 +108,7 @@ export default class AppIntro extends Component {
   constructor(props) {
     super(props);
 
-    this.styles = StyleSheet.create(assign({}, defaulStyles, props.customStyles));
+    this.styles = StyleSheet.create(assign({}, defaultStyles, props.customStyles));
 
     this.state = {
       skipFadeOpacity: new Animated.Value(1),
@@ -334,19 +333,29 @@ export default class AppIntro extends Component {
     }
 
     if (this.isToTintStatusBar()) {
-      StatusBar.setBackgroundColor(this.shadeStatusBarColor(this.props.pageArray[0].backgroundColor, -0.3), false);
+      const statusBarColor = this.props.pageArray[0].statusBarColor || this.props.pageArray[0].backgroundColor || undefined;
+
+      if (statusBarColor) {
+        StatusBar.setBackgroundColor(this.shadeStatusBarColor(statusBarColor, -0.3), false);
+      }
     }
 
     return (
-      <View style={this.props.style}>
+      <View style={this.props.style}>>
         {androidPages}
         <Swiper
           loop={false}
           index={this.props.defaultIndex}
+          autoplay={this.props.autoplay}
+          autoplayTimeout	={this.props.autoplayTimeout}
           renderPagination={this.renderPagination}
           onMomentumScrollEnd={(e, state) => {
             if (this.isToTintStatusBar()) {
-              StatusBar.setBackgroundColor(this.shadeStatusBarColor(this.props.pageArray[state.index].backgroundColor, -0.3), false);
+             const statusBarColor = this.props.pageArray[state.index].statusBarColor || this.props.pageArray[state.index].backgroundColor || undefined;
+
+             if (statusBarColor) {
+                StatusBar.setBackgroundColor(this.shadeStatusBarColor(statusBarColor, -0.3), false);
+             }
             }
 
             this.props.onSlideChange(state.index, state.total);
@@ -394,6 +403,8 @@ AppIntro.propTypes = {
   showSkipButton: PropTypes.bool,
   showDoneButton: PropTypes.bool,
   showDots: PropTypes.bool,
+  allowFontScaling: PropTypes.bool,
+  fontSize: PropTypes.number
 };
 
 AppIntro.defaultProps = {
@@ -402,15 +413,20 @@ AppIntro.defaultProps = {
   rightTextColor: '#fff',
   leftTextColor: '#fff',
   pageArray: [],
+  autoplay: false,
+  autoplayTimeout: 4,
   onSlideChange: () => {},
   onSkipBtnClick: () => {},
   onDoneBtnClick: () => {},
   onNextBtnClick: () => {},
   doneBtnLabel: 'Done',
   skipBtnLabel: 'Skip',
+  customStyles : {},
   nextBtnLabel: '›',
   defaultIndex: 0,
   showSkipButton: true,
   showDoneButton: true,
-  showDots: true
+  showDots: true,
+  allowFontScaling: true,
+  fontSize: 22
 };
